@@ -26,5 +26,5 @@ on:
             file: ./Dockerfile
             push: true
             tags: |
-             mds8/projet-angular-docker-miage:latest
-             mds8/projet-angular-docker-miage:${{ github.sha }}
+             mds81/projet-angular-docker-miage:latest
+             mds81/projet-angular-docker-miage:${{ github.sha }}
