@@ -1,0 +1,86 @@
+# Pipeline GitLab CI pour le projet Angular + Docker.
+# Variables CI/CD à définir dans Settings > CI/CD > Variables (masquées/protégées) :
+#   DOCKER_HUB_USERNAME, DOCKER_HUB_PASSWORD, SONAR_TOKEN, SONAR_HOST_URL, SLACK_WEBHOOK_URL
+
+stages:
+  - install
+  - build
+  - test
+  - quality
+  - docker
+
+variables:
+  IMAGE_NAME: "mds81/projet-angular-docker-miage"
+
+default:
+  image: node:22-bookworm
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+
+install:
+  stage: install
+  script:
+    - npm ci --cache .npm --prefer-offline
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1h
+
+build:
+  stage: build
+  needs: [install]
+  script:
+    - npm run build -- --configuration production
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1h
+
+test:
+  stage: test
+  needs: [install]
+  before_script:
+    - apt-get update && apt-get install -y chromium
+    - export CHROME_BIN=/usr/bin/chromium
+  script:
+    - npx ng test --no-watch --no-progress --browsers=ChromeHeadless
+
+sonarqube:
+  stage: quality
+  image: sonarsource/sonar-scanner-cli:latest
+  needs: [build]
+  script:
+    - sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.host.url=$SONAR_HOST_URL
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+docker-build-push:
+  stage: docker
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs: [build]
+  before_script:
+    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+  script:
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_NAME:latest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+notify:
+  stage: .post
+  image: curlimages/curl:latest
+  needs: [docker-build-push]
+  script:
+    - >
+      curl -X POST -H 'Content-type: application/json'
+      --data "{\"text\":\"✅ Image Docker publiée pour $CI_PROJECT_NAME ($CI_COMMIT_SHORT_SHA)\"}"
+      "$SLACK_WEBHOOK_URL"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
