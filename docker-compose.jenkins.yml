@@ -1,0 +1,22 @@
+version: "3.9"
+
+# Stack independante utilisee uniquement pour la demo pratique Jenkins.
+# Ne touche pas au docker-compose.yml principal de l'application.
+# Lancement : docker compose -f docker-compose.jenkins.yml up -d
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: jenkins_demo
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home:
