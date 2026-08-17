@@ -12,11 +12,28 @@ Ce projet expose désormais trois pipelines équivalents pour le même workflow
 ## 1. Démo Jenkins (local, via Docker)
 
 ```bash
+docker volume create jenkins_home
 docker run -d --name jenkins \
   -p 8080:8080 -p 50000:50000 \
   -v jenkins_home:/var/jenkins_home \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  jenkinsci/blueocean
+  jenkins/jenkins:lts
+```
+
+> Utiliser `jenkins/jenkins:lts` (activement maintenue) plutôt que `jenkinsci/blueocean`,
+> qui n'est plus mise à jour et dont le cœur Jenkins trop ancien fait échouer l'installation
+> des plugins actuels.
+
+L'image ne contient pas le client Docker par défaut ; le copier depuis l'image officielle
+`docker:cli` :
+
+```bash
+docker create --name docker-cli-tmp docker:cli
+docker cp docker-cli-tmp:/usr/local/bin/docker docker-binary
+docker cp docker-binary jenkins:/usr/bin/docker
+docker exec -u root jenkins chmod +x /usr/bin/docker
+docker exec -u root jenkins chmod 666 /var/run/docker.sock
+docker rm docker-cli-tmp
 ```
 
 1. Récupérer le mot de passe admin initial : `docker logs jenkins` puis ouvrir `http://localhost:8080`.
@@ -41,7 +58,7 @@ Deux options pour la démo :
 
 - Le déclenchement du pipeline (push / webhook) côté Jenkins vs côté GitLab.
 - La lecture du `Jenkinsfile` (Groovy, stages impératifs) vs `.gitlab-ci.yml` (YAML déclaratif).
-- L'interface d'exécution : Jenkins (Blue Ocean) vs l'onglet **Pipelines** intégré à GitLab.
+- L'interface d'exécution : la **Stage View** de Jenkins vs l'onglet **Pipelines** intégré à GitLab.
 - Le résultat final identique : image Docker publiée sur Docker Hub, notification Slack.
 
 ## 4. Points d'attention
