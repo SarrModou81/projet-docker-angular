@@ -77,12 +77,24 @@ pipeline {
 
     post {
         success {
-            slackSend(channel: '#ci-cd', color: 'good',
-                message: "✅ Build réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.GIT_COMMIT})")
+            script {
+                try {
+                    slackSend(channel: '#ci-cd', color: 'good',
+                        message: "✅ Build réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.GIT_COMMIT})")
+                } catch (err) {
+                    echo "Notification Slack ignorée (non configurée) : ${err}"
+                }
+            }
         }
         failure {
-            slackSend(channel: '#ci-cd', color: 'danger',
-                message: "❌ Build échoué : ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+            script {
+                try {
+                    slackSend(channel: '#ci-cd', color: 'danger',
+                        message: "❌ Build échoué : ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+                } catch (err) {
+                    echo "Notification Slack ignorée (non configurée) : ${err}"
+                }
+            }
         }
     }
 }
