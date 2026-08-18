@@ -42,7 +42,10 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'npx ng test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox'
+                sh '''
+                    export CHROME_BIN=/usr/bin/chromium
+                    npx ng test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox
+                '''
             }
         }
 
