@@ -47,7 +47,7 @@ test:
     - apt-get update && apt-get install -y chromium
     - export CHROME_BIN=/usr/bin/chromium
   script:
-    - npx ng test --no-watch --no-progress --browsers=ChromeHeadless
+    - npx ng test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox
 
 sonarqube:
   stage: quality

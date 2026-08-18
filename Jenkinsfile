@@ -42,7 +42,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'npx ng test --no-watch --no-progress --browsers=ChromeHeadless'
+                sh 'npx ng test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox'
             }
         }
 
